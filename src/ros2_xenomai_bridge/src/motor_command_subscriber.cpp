@@ -7,12 +7,13 @@
 
 #define SHM_NAME "/motor_command"
 #define SHM_SIZE sizeof(MotorCommand)
+#define NUM_MOTORS 2
 
 struct MotorCommand
 {
-    double position[5];
-    double velocity[5];
-    double effort[5];
+    double position[NUM_MOTORS];
+    double velocity[NUM_MOTORS];
+    double effort[NUM_MOTORS];
 };
 
 using MotorCommand = struct MotorCommand;
@@ -59,7 +60,7 @@ private:
     void command_callback(const sensor_msgs::msg::JointState::SharedPtr msg)
     {
         /* Copy data to shared memory */
-        for (size_t index = 0; index < 5; index++)
+        for (size_t index = 0; index < NUM_MOTORS; index++)
         {
             /* Ensure we don't access out of bounds */
             state_->position[index] = (index < msg->position.size()) ? msg->position[index] : 0.0;

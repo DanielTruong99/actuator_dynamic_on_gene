@@ -35,6 +35,12 @@ SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${XENO_LDFLAGS}")
 # build executable
 add_executable(motor_driver src/Elmo_test_dc.cpp src/Humanoid_EtherCAT_DC.cpp)
 
+set_target_properties(motor_driver PROPERTIES
+  BUILD_WITH_INSTALL_RPATH TRUE
+  INSTALL_RPATH "$ORIGIN/../lib:/usr/xenomai/lib:/usr/local/lib"
+)
+message(STATUS "ORIGIN: ${ORIGIN}")
+
 target_link_libraries(motor_driver 
   alchemy
   cobalt
@@ -43,9 +49,9 @@ target_link_libraries(motor_driver
 )
 
 
-install(TARGETS motor_driver
-  DESTINATION lib/${PROJECT_NAME}
-)
+# install(TARGETS motor_driver
+#   DESTINATION lib/${PROJECT_NAME}
+# )
 
 # install launch files
 install(DIRECTORY launch

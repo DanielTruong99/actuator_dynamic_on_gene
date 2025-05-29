@@ -4,15 +4,12 @@
 /* ---- Basic setting ---- */ 
 #include <stdio.h>
 #include <cmath>
-#include <iostream>
 #include <fstream>
 #include <ctime>
 /* ---- Basic setting of Eigen start ---- */ 
 #include <eigen3/Eigen/Eigen>
 #include <eigen3/Eigen/Dense>
 /* ---- Basic setting of Xenomai start ---- */
-#include <fcntl.h>
-#include <sys/mman.h>
 #include <alchemy/task.h>
 #include <errno.h>
 #include <sys/mman.h>
@@ -33,9 +30,7 @@
 /**************************************************
 ---------------- Global Variable ------------------
 **************************************************/
-/* ---- Global variable of Xenomai start ---- */
-RT_TASK joint_state_publisher_task; // 주기: 1ms
-RT_TASK joint_command_subscriber_task; // 주기: 1ms 
+/* ---- Global variable of Xenomai start ---- */ 
 RT_TASK control_task;      // 주기: 1ms
 RT_TASK print_task;        // 주기: 1ms
 RT_TASK save_task;         // 주기: 1ms
@@ -294,86 +289,12 @@ void initialPositionCapture(void *arg)
 /**************************************************
 --------------- Xenomai functions ----------------
 **************************************************/
-struct MotorState
-{
-    double position[NUM_ELMO + NUM_EVO];         // Radians
-    double angular_velocity[NUM_ELMO + NUM_EVO]; // Rad/s
-    double torque[NUM_ELMO + NUM_EVO];           // Nm
-    double elapsed_time;    // ns
-};
-
-using MotorState = struct MotorState;
-
-#define SHM_MOTOR_STATE_NAME "/motor_state"
-#define SHM_MOTOR_STATE_SIZE sizeof(MotorState)
-
-void joint_state_publisher(void *arg)
-{
-    MotorState *state = (MotorState *)arg;
-    RTIME now, start_time;
-
-    rt_task_set_periodic(NULL, TM_NOW, (int)ms(1.0));       // 1ms
-    start_time = rt_timer_read(); // 시작 시간 기록
-    while (true) 
-    {
-        rt_task_wait_period(NULL);
-        
-        /* Loop over the ELMO drivers  */
-        for (int index = 0; index < NUM_ELMO + NUM_EVO; index++)
-        {
-            // fake podRad to be sine function
-            // state->position[index] = std::sin(2 * PI * 0.5 * (now) / 1e9); // 0.5Hz sine wave
-            state->position[index] = posRad[index];
-            state->angular_velocity[index] = velRadPerSec[index];
-            state->torque[index] = ActualTor[index];
-        }
-
-        /* Update elapsed time */
-        now = rt_timer_read();
-        state->elapsed_time = (double)(now - start_time); //ns
-        start_time = now;
-    }
-}
-
-struct MotorCommand
-{
-    double position[NUM_ELMO + NUM_EVO];         // Radians
-    double angular_velocity[NUM_ELMO + NUM_EVO]; // Rad/s
-    double torque[NUM_ELMO + NUM_EVO];           // Nm
-};
-
-using MotorCommand = struct MotorCommand;
-
-#define SHM_MOTOR_CMD_NAME "/motor_command"
-#define SHM_MOTOR_CMD_SIZE sizeof(MotorCommand)
-
-void joint_command_sub(void *arg)
-{
-    MotorCommand *motor_cmd = (MotorCommand *)arg;
-    RTIME now, start_time;
-
-    rt_task_set_periodic(NULL, TM_NOW, (int)ms(1.0)); // 1ms
-    start_time = rt_timer_read();                     // 시작 시간 기록
-    while (true)
-    {
-        rt_task_wait_period(NULL);
-
-        /* Copy joint cmds */
-        for (int index = 0; index < NUM_ELMO + NUM_EVO; index++)
-        {
-            pid_target[index] += motor_cmd->position[index];
-            
-        }
-
-        // rt_printf("Motor %d: Position Command = %f\n", 0, motor_cmd->position[0]);
-    }
-}
-
 void control(void *arg)
 {
     RTIME now, previous;
     RTIME start_time = rt_timer_read(); 
     rt_task_set_periodic(NULL, TM_NOW, (int)ms(1.0));       
+
 
     rt_task_sleep((RTIME)ms(30.0));
     previous = rt_timer_read();
@@ -393,18 +314,94 @@ void control(void *arg)
 
         static double prev_sin_val[NUM_ELMO] = {0,}; // 이전 sin 값 저장
 
-        for (int i = 0; i < NUM_ELMO; i++) 
-        {
-            if (init_ck == true && motor_off == false) {
-                pidControl(i, pid_target[i], &error[i]);
-            }
-            else
-            {
-                for (int i = 0; i < NUM_ELMO; i++) {
-                    torqueCmd[i] = 0.0;
-                    TargetTor[i] = 0;
+        for (int i = 0; i < NUM_ELMO; i++) {
+            #if TEST_sin == 1
+                if (init_ck == true && motor_off == false) {
+                    if(sin_go && i == sin_id){
+                        if (!sin_started) {
+                            sin_start_time = now;
+                            sin_started = true;
+                        }
+                        double elapsed_time = (double)(now - sin_start_time) / 1e9;
+                        double curr_sin_val = A * std::sin(2.0 * PI * f * elapsed_time);
+                    
+                        pid_target[i] = init_pos[i] + curr_sin_val;
+                        // 싸이클 카운터: 제로크로싱 기준 (양→음)
+                        if (prev_sin_val[i] > 0 && curr_sin_val <= 0) {
+                            sin_ck[i]++;
+                        }
+                        prev_sin_val[i] = curr_sin_val;
+                    }
+                    else{
+                        pid_target[i] = init_pos[i];
+                    }
+                    pidControl(i, pid_target[i], &error[i]);
                 }
-            }
+                else
+                {
+                    for (int i = 0; i < NUM_ELMO; i++) {
+                        torqueCmd[i] = 0.0;
+                        TargetTor[i] = 0;
+                    }
+                }
+            #endif
+            #if TEST_Pos == 1
+                if(init_ck == true && motor_off == false){
+                    if(sin_go == true && i == sin_id){
+                        pid_target[i] = init_pos[i] - 0.1;
+                    }
+                    else
+                    {
+                        pid_target[i] = zero_pos[i];
+                    }
+                    
+                    pidControl(i, pid_target[i], &error[i]);
+                }
+                else
+                {
+                    for (int i = 0; i < NUM_ELMO; i++) {
+                        torqueCmd[i] = 0.0;
+                        TargetTor[i] = 0;
+                    }
+                }
+            #endif
+            #if TEST_VEL == 1
+                if (init_ck == true && motor_off == false) {
+                    if (i == sin_id) {
+                        if (!vel_step_started) {
+                            vel_step_start_time = now;
+                            vel_step_started = true;
+                            rpm_setpoint = -100.0;
+                        }
+                
+                        // 시간 경과 계산
+                        double elapsed_time = (double)(now - vel_step_start_time) / 1e9;
+                
+                        // 5초 간격으로 rpm 증가
+                        static double last_step_time = 0.0;
+                        if (elapsed_time - last_step_time >= step_interval_sec) {
+                            last_step_time = elapsed_time;
+                            rpm_setpoint += rpm_step;
+                
+                            if (rpm_setpoint > rpm_end) {
+                                rpm_setpoint = rpm_end;
+                            }
+                        }
+                
+                        pid_vel_target[i] = rpm_setpoint * 2.0 * PI / 60.0;  // rad/s로 변환
+                    } 
+                    else {
+                        pid_vel_target[i] = {0};
+                    }
+                    velControl(i, pid_vel_target[i], &error[i]);
+                }
+                else {
+                    for (int i = 0; i < NUM_ELMO; i++) {
+                        torqueCmd[i] = 0.0;
+                        TargetTor[i] = 0;
+                    }
+                }
+            #endif
         }
         previous = now;
     }
@@ -724,31 +721,6 @@ int main(int argc, char **argv)
 
     mlockall(MCL_CURRENT | MCL_FUTURE);
 
-    /* Shared Memory configuration
-        - shm_open: Create a new shared memory object
-        - ftruncate: Set the size of the shared memory object
-        - mmap: Map the shared memory object into the process's address space
-        - mlock: Lock the memory to prevent page faults
-    */
-    // Create shared memory for motor state
-    // int shm_motor_state_fd = shm_open(SHM_MOTOR_STATE_NAME, O_CREAT | O_RDWR, 0666);
-    // ftruncate(shm_motor_state_fd, SHM_MOTOR_STATE_SIZE);
-
-    // MotorState *state = (MotorState *)mmap(NULL, SHM_MOTOR_STATE_SIZE,
-    //                                        PROT_READ | PROT_WRITE,
-    //                                        MAP_SHARED, shm_motor_state_fd, 0);
-    // mlock(state, SHM_MOTOR_STATE_SIZE);
-
-    // // Create shared memory for motor command
-    // int shm_motor_cmd_fd = shm_open(SHM_MOTOR_CMD_NAME, O_CREAT | O_RDWR, 0666);
-    // ftruncate(shm_motor_cmd_fd, SHM_MOTOR_CMD_SIZE);
-
-    // MotorCommand *motor_cmd = (MotorCommand *)mmap(NULL, SHM_MOTOR_CMD_SIZE,
-    //                                        PROT_READ | PROT_WRITE,
-    //                                        MAP_SHARED, shm_motor_cmd_fd, 0);
-    // mlock(motor_cmd, SHM_MOTOR_CMD_SIZE);
-
-    /* Ethercat initialization */
     inOP = ethercatMaster.init(TORQUE_MODE, "rteth0");
 
     if (!inOP) {
@@ -756,35 +728,43 @@ int main(int argc, char **argv)
         return 0;
     }
 
+    rt_task_create(&ecat_ch, "EtherCAT_checking", 0, 50, 0);   
+    rt_task_start(&ecat_ch, &ecatcheck, NULL);
 
-    // rt_task_create(&ecat_ch, "EtherCAT_checking", 0, 50, 0);   
-    // rt_task_start(&ecat_ch, &ecatcheck, NULL);
-
-    // rt_task_create(&EtherCAT_task, "EtherCAT_tasking", 0, 80, 0);
-    // rt_task_start(&EtherCAT_task, &EtherCAT, NULL);
+    rt_task_create(&EtherCAT_task, "EtherCAT_tasking", 0, 80, 0);
+    rt_task_start(&EtherCAT_task, &EtherCAT, NULL);
 
     rt_task_create(&control_task, "controling", 0, 70, 0);
     rt_task_start(&control_task, &control, NULL);
 
-    /* Create ros2 xenomai bridge via shared memory mechanism 
-        - joint_state_publisher: Publish the joint state
-        - joint_command_sub: Subscribe to the joint command
-    */
-//    rt_task_create(&joint_state_publisher_task, "joint_state_publisher", 0, 40, 0);
-//    rt_task_start(&joint_state_publisher_task, &joint_state_publisher, state);
+    rt_task_create(&save_sin, "saving_sin", 0, 10, 0);
+    rt_task_start(&save_sin, &saveSin, NULL);
 
-//    rt_task_create(&joint_command_subscriber_task, "joint_command_subscriber", 0, 71, 0);
-//    rt_task_start(&joint_command_subscriber_task, &joint_command_sub, motor_cmd);
+    #if saveOn == 1
+        rt_task_create(&save_task, "saving", 0, 40, 0);
+        rt_task_start(&save_task, &saveData, NULL);
+    #endif
 
+    #if printOn == 1
+        rt_task_create(&print_task, "printing", 0, 60, 0);
+        rt_task_start(&print_task, &print, NULL);
+    #endif
 
-    // while (run) {
-    //     sched_yield();
-    // }
+    while (run) {
+        sched_yield();
+    }
 
-    // rt_task_delete(&control_task);
-    // rt_task_delete(&ecat_ch);
-    // rt_task_delete(&EtherCAT_task);
-    // run = 0;
+    rt_task_delete(&control_task);
+    rt_task_delete(&save_sin);
+    #if saveOn == 1
+        rt_task_delete(&save_task);
+    #endif
+    #if printOn == 1
+        rt_task_delete(&print_task);
+    #endif
+    rt_task_delete(&ecat_ch);
+    rt_task_delete(&EtherCAT_task);
+    run = 0;
 
     rt_printf("End of Program\n");
 

@@ -7,6 +7,7 @@ def generate_launch_description():
             executable='motor_driver',
             name='motor_driver',
             output='screen',
+            # prefix='ethercat_grant'
             # parameters=[{'use_sim_time': False}]
         )
 

@@ -40,7 +40,7 @@ target_link_libraries(joint_planner
 
 # install executables
 install(TARGETS joint_planner
-  DESTINATION 
+  DESTINATION lib/${PROJECT_NAME}
 )
 
 install(DIRECTORY motion_files

@@ -5,12 +5,12 @@
 
 #define SHM_NAME "/motor_state"
 #define SHM_SIZE sizeof(MotorState)
-
+#define NUM_MOTORS 2
 struct MotorState
 {
-    double position[5];
-    double angular_velocity[5];
-    double torque[5];
+    double position[NUM_MOTORS];
+    double angular_velocity[NUM_MOTORS];
+    double torque[NUM_MOTORS];
     double elapsed_time; // ms
 };
 
@@ -37,9 +37,9 @@ public:
 private:
     void init_buffers()
     {
-        joint_state_.position.resize(5);
-        joint_state_.velocity.resize(5);
-        joint_state_.effort.resize(6);
+        joint_state_.position.resize(NUM_MOTORS);
+        joint_state_.velocity.resize(NUM_MOTORS);
+        joint_state_.effort.resize(NUM_MOTORS + 1); // +1 for elapsed_time
         joint_state_.name = {"L_hip_joint", "L_hip2_joint", "L_thigh_joint", "L_calf_joint", "L_toe_joint"};
     }
 
@@ -57,13 +57,13 @@ private:
 
     void publish_state()
     {
-        for (int i = 0; i < 5; ++i)
+        for (int i = 0; i < NUM_MOTORS; ++i)
         {
             joint_state_.position[i] = state_->position[i];
             joint_state_.velocity[i] = state_->angular_velocity[i];
             joint_state_.effort[i] = state_->torque[i];
         }
-        joint_state_.effort[5] = state_->elapsed_time; // ms
+        joint_state_.effort[NUM_MOTORS] = state_->elapsed_time; // ms elapsed time
         joint_state_.header.stamp = this->now();
         publisher_->publish(joint_state_);
     }

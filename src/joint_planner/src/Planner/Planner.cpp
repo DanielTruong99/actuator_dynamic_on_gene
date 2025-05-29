@@ -101,12 +101,13 @@ namespace planner
         float joint_pos_error_norm = 0.0f;
         float joint_pos_error;
         std::vector<float> joint_pos = _robot_interface->get_joint_positions();
-        for (size_t index = 0; index < _joint_positions_cmd.size(); ++index)
+        // ! Temporarily set command for 2 joint positions
+        for (size_t index = 0; index < 2; ++index)
         {
             joint_pos_error = _joint_positions_cmd[index] - joint_pos[index];
             joint_pos_error_norm += std::pow(joint_pos_error, 2);
         }
-        joint_pos_error_norm = std::sqrt(joint_pos_error_norm);
+        joint_pos_error_norm = std::sqrt(joint_pos_error_norm) / 2.0f;
         return joint_pos_error_norm < 0.01f; // Threshold for reaching the position
     }
 

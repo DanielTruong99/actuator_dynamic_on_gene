@@ -15,13 +15,27 @@
 				// "--packages-select",
 				// "test_xenomai",
 				"--packages-ignore",
-				"test_xenomai", "non_rt_node"
+				"test_xenomai", "non_rt_node", "motor_driver",
 			],
 			"problemMatcher": [
 				"$catkin-gcc"
 			],
 			"group": "build",
 			"label": "colcon: build"
-		}
+		},
+		{
+			"type": "shell",
+			"label": "Run Post-Build Script",
+			"command": "source src/motor_driver/post_build.bash",
+		},
+		{
+			"label": "Build and Run Script",
+			"dependsOn": [
+				"colcon: build",
+				"Run Post-Build Script"
+			],
+			"group": "build",
+			"dependsOrder": "sequence"
+    	}
 	]
 }

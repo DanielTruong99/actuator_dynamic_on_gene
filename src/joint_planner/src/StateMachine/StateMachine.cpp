@@ -87,6 +87,16 @@ namespace planner_sm
                 //     break;
                 // }
 
+                /* Wait 3s before transient state */
+                static uint16_t wait_counter = 0;
+                wait_counter++;
+                if(wait_counter < static_cast<uint16_t>(3.0 / _sampling_time)) // 3s wait
+                {
+                    status = fsm::Status::IGNORED_STATUS;
+                    break;
+                }
+                wait_counter = 0; // reset wait counter
+
                 /* First configuration of the Planner plan is reached, transient to planning state*/
                _state = (fsm::FSM::StateHandler)&PlannerStateMachine::planning_state;
                 status = fsm::Status::TRAN_STATUS;

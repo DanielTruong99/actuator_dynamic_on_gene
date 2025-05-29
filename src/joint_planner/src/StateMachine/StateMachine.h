@@ -67,19 +67,19 @@ namespace planner_sm
                 static Event const timeout_10ms_event(static_cast<uint8_t>(Signal::TIMEOUT_5MS_SIG));
                 event_manager::g_event_manager.post_event(&timeout_10ms_event); // 10ms timeout event
 
-                if ((_timer_counter == static_cast<uint8_t>(1.0 / _sampling_time))) // 1s timeout event
+                if ((_timer_counter == static_cast<uint16_t>(1.0 / _sampling_time))) // 1s timeout event
                 {
                     static Event const timeout_1s_event(static_cast<uint8_t>(Signal::TIMEOUT_1S_SIG));
                     event_manager::g_event_manager.post_event(&timeout_1s_event);
                 }
-                else if ((_timer_counter == static_cast<uint8_t>(3.0 / _sampling_time))) // 3s timeout event
+                else if ((_timer_counter == static_cast<uint16_t>(3.0 / _sampling_time))) // 3s timeout event
                 {
                     static Event const timeout_3s_event(static_cast<uint8_t>(Signal::TIMEOUT_3S_SIG));
                     event_manager::g_event_manager.post_event(&timeout_3s_event);
                 }
 
                 _timer_counter++; // increment timer counter
-                if (_timer_counter >= static_cast<uint8_t>(10.0 / _sampling_time)) // reset timer counter
+                if (_timer_counter >= static_cast<uint16_t>(10.0 / _sampling_time)) // reset timer counter
                 {
                     _timer_counter = 0;
                 }

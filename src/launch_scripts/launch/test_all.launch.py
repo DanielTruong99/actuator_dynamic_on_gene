@@ -11,19 +11,13 @@ def generate_launch_description():
     joint_planner_pkg_share = get_package_share_directory('joint_planner')
     joint_planner_launch = os.path.join(joint_planner_pkg_share, 'launch', 'joint_planner.launch.py')
 
-    # Define the path to the motor driver launch file
-    motor_driver_pkg_share = get_package_share_directory('motor_driver')
-    motor_driver_launch = os.path.join(motor_driver_pkg_share, 'launch', 'motor_driver.launch.py')
-
     # Define the path to the ros2_xenomai_bridge launch file
     ros2_xenomai_bridge_pkg_share = get_package_share_directory('ros2_xenomai_bridge')
     ros2_xenomai_bridge_launch = os.path.join(ros2_xenomai_bridge_pkg_share, 'launch', 'ros2_xenomai_bridge.launch.py')
 
     return LaunchDescription([
         # Include the motor driver launch file
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(motor_driver_launch)
-        ),
+
 
         # Include the ros2_xenomai_bridge launch file
         IncludeLaunchDescription(
