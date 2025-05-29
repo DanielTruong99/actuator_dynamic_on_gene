@@ -2,6 +2,7 @@ from launch import LaunchDescription
 from launch.actions import IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
+from launch.actions import ExecuteProcess
 import os
 
 from ament_index_python.packages import get_package_share_directory
@@ -17,7 +18,10 @@ def generate_launch_description():
 
     return LaunchDescription([
         # Include the motor driver launch file
-
+        ExecuteProcess(
+            cmd=['roslaunch', 'EtherCAT_test', 'Elmo_test_dc.launch'],
+            output='screen'
+        ),
 
         # Include the ros2_xenomai_bridge launch file
         IncludeLaunchDescription(

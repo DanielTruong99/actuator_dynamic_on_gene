@@ -1,3 +1,4 @@
 build
 install 
 log
+src/joint_planner/motion_files/*.csv
