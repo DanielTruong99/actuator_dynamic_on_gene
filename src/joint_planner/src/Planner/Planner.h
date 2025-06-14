@@ -65,7 +65,7 @@ namespace planner
             /* Variable related low pass filter */
             std::vector<float> _filtered_position_cmds;
             bool _is_first_time = true;
-            const float _alpha = 0.9105f;
+            const float _alpha = 0.98f;
         public:
             /* Apply low pass filter to the joint position commands */
             std::vector<float> apply_filter(std::vector<float> &joint_positions_cmds);

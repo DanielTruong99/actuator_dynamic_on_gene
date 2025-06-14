@@ -6,6 +6,7 @@
 #include "rclcpp/rclcpp.hpp"
 
 #include "../ActuatorInterface/ROSActuatorInterface.h"
+#include "../DataInterface/ROSDataInterface.h"
 #include "../Planner/Planner.h"
 #include "../EventManager/EventManager.h"
 #include "../FSM/FSM.h"
@@ -21,10 +22,12 @@ namespace planner_sm
         public:
             PlannerStateMachine(rclcpp::Node::SharedPtr node, 
                 std::shared_ptr<ROSActuatorInterface> actuator_interface, 
+                std::shared_ptr<ROSDataInterface> data_interface,
                 std::shared_ptr<planner::Planner> planner) : 
                 FSM(),
                 _node(node),
                 _actuator_interface(actuator_interface),
+                _data_interface(data_interface),
                 _planner(planner)
             {
                 _sampling_time = 0.005; // 5ms
@@ -48,6 +51,7 @@ namespace planner_sm
             rclcpp::Node::SharedPtr _node;
             float _sampling_time;
             std::shared_ptr<ROSActuatorInterface> _actuator_interface;
+            std::shared_ptr<ROSDataInterface> _data_interface;
             std::shared_ptr<planner::Planner> _planner;
         
         /* Timer related variables, methods */

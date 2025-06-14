@@ -22,7 +22,7 @@ int main(int argc, char *argv[])
     auto planner = std::make_shared<planner::Planner>(data_interface);
 
     /* Create the state machine */
-    auto state_machine = std::make_shared<planner_sm::PlannerStateMachine>(node, actuator_interface, planner);
+    auto state_machine = std::make_shared<planner_sm::PlannerStateMachine>(node, actuator_interface, data_interface, planner);
 
     while(rclcpp::ok())
     {

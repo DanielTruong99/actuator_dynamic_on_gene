@@ -7,7 +7,7 @@
 
 #define SHM_NAME "/motor_command"
 #define SHM_SIZE sizeof(MotorCommand)
-#define NUM_MOTORS 2
+#define NUM_MOTORS 4
 
 struct MotorCommand
 {
