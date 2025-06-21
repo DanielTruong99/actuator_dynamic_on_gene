@@ -9,7 +9,7 @@
 				"--event-handlers",
 				"console_cohesion+",
 				"--base-paths",
-				"/home/gene/DanielWorkspace/ros2_ws",
+				"/home/danieltruong/DanielWorkspace/ros2_ws",
 				"--cmake-args",
 				"-DCMAKE_BUILD_TYPE=Debug",
 				// "--packages-select",

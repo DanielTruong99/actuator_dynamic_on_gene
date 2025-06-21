@@ -43,9 +43,9 @@ install(TARGETS joint_planner
   DESTINATION lib/${PROJECT_NAME}
 )
 
-install(DIRECTORY motion_files
-  DESTINATION lib/${PROJECT_NAME}
-)
+# install(DIRECTORY motion_files
+#   DESTINATION lib/${PROJECT_NAME}
+# )
 
 # install launch files
 install(DIRECTORY launch

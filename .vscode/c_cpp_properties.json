@@ -6,12 +6,10 @@
                 "limitSymbolsToIncludedHeaders": false
             },
             "includePath": [
-                "/opt/ros/foxy/include/**",
-                "/home/gene/DanielWorkspace/ros2_ws/src/motor_driver/include/**",
+                "/opt/ros/humble/include/**",
                 "/usr/include/**",
-                "/usr/xenomai/include/**",
-                "/usr/xenomai/include/cobalt/**",
-                "/usr/include/soem/**",
+                "/opt/openrobots/include/**",
+                "src/trac_ik/trac_ik_lib/include/**"
             ],
             "name": "ROS",
             "intelliSenseMode": "gcc-x64",

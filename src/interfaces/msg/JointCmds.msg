@@ -1,0 +1,2 @@
+sensor_msgs/JointState joint_cmds
+uint8 control_mode

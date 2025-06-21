@@ -8,8 +8,8 @@
         {
             "name": "ROS: Launch",
             "request": "launch",
-            "target": "/home/gene/DanielWorkspace/ros2_ws/install/launch_scripts/share/launch_scripts/launch/test_joint_planner.launch.py",
-            "type": "ros"
+            "target": "/home/danieltruong/DanielWorkspace/ros2_ws/src/joint_controller/launch/joint_controller.launch.py",
+            "type": "ros",
         }
     ]
 }
